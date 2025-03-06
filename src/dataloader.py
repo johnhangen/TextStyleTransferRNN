@@ -10,7 +10,7 @@ class TextDataset(Dataset):
         self.train = train
 
         with open(self.config.DataLoader.Path, encoding='utf-8') as file:
-            self._text = file.read()
+            self._text = file.read(10_000)
         
         self.Letters = sorted(set(self._text))
         self.N_letters = len(self.Letters)

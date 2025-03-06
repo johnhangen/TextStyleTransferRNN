@@ -98,5 +98,6 @@ def train(config: Config, model: Union[Model, torch.nn.Module], dataloaders:dict
     print(f'Best val Acc: {best_acc:.4f}')
 
     model.load()
+    model.export_to_onnx('model/')
 
     return model

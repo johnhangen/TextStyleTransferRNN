@@ -1,6 +1,6 @@
 DataLoader:
   Path: 'data/obsidian_notes_2025-02-24.txt'
-  Batch_size: 1024
+  Batch_size: 1
 
 Model:
   model_type: "GRU"
@@ -8,7 +8,7 @@ Model:
   Path: 'model\Notes.pt'
 
 Train:
-  epochs: 25
+  epochs: 1
 
 Optimizer:
   learning_rate: 0.001

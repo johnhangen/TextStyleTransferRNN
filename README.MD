@@ -1,129 +1,113 @@
-# Text Style Transfer RNN
+# Text Style Transfer with GRU
 
-🎭 *"To train, or not to train— that is the question."*
+A web application that uses a GRU (Gated Recurrent Unit) neural network to generate text in a specific style. This app runs entirely in your browser using ONNX Runtime Web.
 
-## Installation
+## Live Demo
 
-1) Clone the repository:
+Visit the live demo at: [https://yourusername.github.io/TextStyleTransferRNN](https://yourusername.github.io/TextStyleTransferRNN)
 
-    ```bash
-    git clone https://github.com/johnhangen/TextStyleTransferRNN
-    cd TextStyleTransferRNN
-    ```
+## Features
 
-2) Create and activate a virtual environment (optional but recommended):
+- Generate text in the style of your trained model
+- Adjust generation length and temperature
+- Runs entirely in the browser - no server required
+- Works offline once loaded
 
-    ```bash
-    python -m venv env
-    source env/bin/activate  # On Windows, use `env\Scripts\activate`
-    ```
+## How to Use
 
-3) Install dependencies:
+1. Enter some seed text in the input box
+2. Adjust the generation length (how many characters to generate)
+3. Adjust the temperature (higher = more creative, lower = more predictable)
+4. Click "Generate Text"
+5. The model will generate text continuing from your seed text
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+## Technical Details
 
-4) Make sure to download the datasets and place it in the data/ folder.
+This application uses:
 
-## Usage
+- A GRU (Gated Recurrent Unit) neural network with attention mechanism
+- ONNX Runtime Web for in-browser inference
+- Character-level text generation
 
-To use the model you can run the main.py file. This will train the model on the datasets and then generate text based on the seed you provide:
+## Setup Instructions
 
-```bash
-python main.py
+### Converting Your Model
+
+To use your own trained model, you can export it directly from your Python code:
+
+```python
+from src.model.model import Model
+from config.configs import Config
+
+# Load your configuration
+config = Config()
+
+# Create and load your model
+model = Model(config)
+model.load()
+
+# Export to ONNX format (saves to assets/model/ by default)
+model.export_to_onnx()
 ```
 
-## Data
+This will generate both the ONNX model file and the character encoding JSON file in the `assets/model/` directory.
 
-For this project, I used the tiny Shakespeare dataset, Wikipedia, Linux Kernel, and a sample of my notes from school. For each of these datasets I trained a separate RNN. Below are samples are the results of using one random char as the seed for each of the datasets.
+### Model Dimensions
 
-### Shakespeare
+The web application automatically detects the dimensions of your model (hidden size and number of layers) from the exported ONNX model. If you encounter dimension mismatch errors, make sure:
 
-```txt
-What is't sinched us you make budget-pear live him.
+1. The model is exported correctly with the `export_to_onnx()` method
+2. The `model_info.json` file contains the correct dimensions:
 
-LARTIUS:
-They from this blood
-Bf our father's mood
-At Grecian swear'd and endure
-Was prick in thing this wetward then rejourn a cuprocenable confouths, if
-Their blove answer'd!
-
-COMINIUS:
-Phostur, is bale
-prie last, where that so stand same make gods.
-Wherein we have but proceed
-Be as mine home,
-And carry things go valiak,
-Than Hector'd.
-
-COMINIUS:
-Go whall,--
-
-MARCIUS:
-I am glad to easing good
-The lamb. You
-had suckled pace it brief Rome done in where is the cheacher,
-Whiles for you,
-Which? have set then; or some on, we
-The brind their blood,
-When she day high,
-But him run incounsellor consper it brings a crack
-Prad they last of thigh
-That a guin'd thee. Hoo lant newing strange.
-
-MARCIUS:
-Comuniertolign on Marcius.
-
-COMINIUS:
-He crack, and held; I lefle son makes.
-
-First Citizen:
-You are fought to time and Caickly.
-
-Second Senator:
-How the clamon fame me, and go with us.
-
-SICINIUS:
-Look, lay as you you have lamb did be an of pride:
-```
-
-### Wikipedia
-
-```txt
-to be stocked or by accessive interests for the prophets, each decades, such as complete resource for all basis, for example, one of the [[WCBS]]; if they found an entire condition of the order, but learning puth of the populationâ€”whof the jurisdiction, considerably as in the Aston Menci.Dasaromatic County includes. And nearby was gained for around merged. This results should not be considered to be more explained in the universe.&quot;
-```
-
-### Linux Kernel
-
-```c
-VE_REG_INIT;a
-
-        update_spin_unlock(&q->syst));
-        for (rcu_ops->event_chunk_files);
-
-        __read(" use each itsize sohe a CPUs.h>
-#include <linux/post, " by the task the { nr_mutex);
-
-        if (!rb) {
-                event->context_event_buf, gcov_start)
-                        device = 0;
-        leget = h1);
+```json
+{
+  "hidden_size": 512,  // Replace with your model's hidden size
+  "num_layers": 2,     // Replace with your model's number of layers
+  "vocab_size": 78     // Replace with your vocabulary size
 }
-void value;
-
-        could flags, 0);
-                        task_struct start_avg();;
-        stop_irqstamp(&parent_cpu_invoke) *tr, zown) {
-                if (!PIGC_TASK,
-                                                         flags)
-         *
- * calls-ring doing tasks mutex a the task to based += new_rd, exit);
-                new = current->thaw = bp
 ```
 
-### School Notes
+### Deploying to GitHub Pages
 
-```txt
+1. Fork or clone this repository
+2. Add your model files to the `assets/model/` directory
+3. Push to GitHub
+4. Enable GitHub Pages in your repository settings
+
+## Development
+
+To run locally:
+
+1. Clone the repository
+2. Open `index.html` in a web browser
+
+## Troubleshooting
+
+### Dimension Mismatch Errors
+
+If you see errors like:
+
 ```
+Error: failed to call OrtRun(). ERROR_CODE: 2, ERROR_MESSAGE: Got invalid dimensions for input: hidden
+```
+
+This indicates a mismatch between the dimensions expected by the model and those provided by the JavaScript code. To fix this:
+
+1. Make sure you've installed the required packages: `pip install onnx onnxruntime`
+2. Re-export your model using the `export_to_onnx()` method
+3. Check that the `model_info.json` file has the correct dimensions
+4. If needed, manually update the `modelConfig` values in `assets/js/app.js`
+
+## Limitations
+
+- The model runs in the browser, so performance depends on the user's device
+- Large models may be slow on mobile devices
+- The initial load may take some time as the model is downloaded
+
+## License
+
+MIT License
+
+## Acknowledgments
+
+- This project uses [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) for in-browser inference
