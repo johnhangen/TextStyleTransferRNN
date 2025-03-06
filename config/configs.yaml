@@ -1,2 +1,14 @@
 DataLoader:
-  Path: 'data\tinyshakespeare.txt'
+  Path: 'data/obsidian_notes_2025-02-24.txt'
+  Batch_size: 1024
+
+Model:
+  model_type: "GRU"
+  hidden_size: 512
+  Path: 'model\Notes.pt'
+
+Train:
+  epochs: 25
+
+Optimizer:
+  learning_rate: 0.001
