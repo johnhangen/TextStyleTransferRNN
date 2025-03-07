@@ -95,6 +95,7 @@ def train(config: Config, model: Union[Model, torch.nn.Module], dataloaders:dict
                     best_acc = epoch_acc
                     model.save()
                     model.save_onnx()
+                    model.save_char_lookup()
 
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')

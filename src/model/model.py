@@ -1,6 +1,7 @@
 from typing import Iterator
 import torch.nn as nn
 import torch
+import json
 import wandb
 import warnings
 
@@ -77,6 +78,16 @@ class Model:
                     'hidden_out': {1: 'batch_size'}
                 }
             )
+
+    def save_char_lookup(self) -> None:
+        char_to_idx = {char: i for i, char in enumerate(self.config.DataLoader.Letters)}
+        idx_to_char = {i: char for i, char in enumerate(self.config.DataLoader.Letters)}
+        vocab_file = f"{self.config.Model.Path}_char_encoding.json"
+        with open(vocab_file, 'w') as f:
+            json.dump({
+                'char_to_idx': char_to_idx,
+                'idx_to_char': idx_to_char
+            }, f, indent=2)
         
     def load(self) -> None:
         self.model.load_state_dict(torch.load(self.config.Model.Path, map_location=self.device, weights_only=True))

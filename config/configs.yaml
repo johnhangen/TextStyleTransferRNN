@@ -1,11 +1,11 @@
 DataLoader:
-  Path: 'data/obsidian_notes_2025-02-24.txt'
+  Path: 'data/tinyshakespeare.txt'
   Batch_size: 1024
 
 Model:
   model_type: "GRU"
   hidden_size: 512
-  Path: 'model\Notes'
+  Path: 'model\Shakespeare'
 
 Train:
   epochs: 25
