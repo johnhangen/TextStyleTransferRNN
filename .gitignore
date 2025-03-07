@@ -4,4 +4,3 @@ src/model/__pycache__/
 wandb/
 .env
 data/obsidian_notes_2025-02-24.text
-data/
