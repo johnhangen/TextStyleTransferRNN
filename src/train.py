@@ -1,10 +1,12 @@
 from torchmetrics.classification import MulticlassF1Score
 from typing import Union
 import torch.nn.functional as F
+import torch.onnx
 import torch
 from tqdm import tqdm
 import time
 import wandb
+
 
 from config.configs import Config
 from src.model.model import Model
@@ -92,6 +94,7 @@ def train(config: Config, model: Union[Model, torch.nn.Module], dataloaders:dict
                 if epoch_acc > best_acc:
                     best_acc = epoch_acc
                     model.save()
+                    model.save_onnx()
 
     time_elapsed = time.time() - since
     print(f'Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s')

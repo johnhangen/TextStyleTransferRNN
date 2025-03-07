@@ -1,11 +1,11 @@
 DataLoader:
-  Path: 'data/obsidian_notes_2025-02-24.txt'
+  Path: 'data/Linux.txt'
   Batch_size: 1024
 
 Model:
   model_type: "GRU"
   hidden_size: 512
-  Path: 'model\Notes.pt'
+  Path: 'model\Linux'
 
 Train:
   epochs: 25

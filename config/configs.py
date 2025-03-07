@@ -16,7 +16,7 @@ class ModelConfig:
     model_type: str = "RNN"
     hidden_size: int = 256
     N_letters: int = None
-    Path: str = 'model/Lunix.pt'
+    Path: str = 'model/Lunix'
     Pretrain: bool = False
 
 @dataclass

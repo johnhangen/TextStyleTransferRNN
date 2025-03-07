@@ -23,4 +23,7 @@ class LSTM(nn.Module):
         return output, hidden
     
     def init_hidden(self, batch_size, device):
-        return torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+        # LSTM requires a tuple of (hidden state, cell state)
+        h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+        c0 = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=device)
+        return (h0, c0)
