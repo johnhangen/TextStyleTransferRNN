@@ -2,6 +2,41 @@
 
 🎭 *"To train, or not to train— that is the question."*
 
+## How it Works
+
+This project leverages Recurrent Neural Networks (RNNs) and their advanced variants. Let's break down how these architectures function:
+
+### RNN (Recurrent Neural Network)
+
+Think of RNNs as neural networks with a memory. Unlike regular networks that process data in isolation, RNNs maintain a "hidden state" that carries information from previous inputs. At each step, the network:
+
+1. Takes in new input
+2. Combines it with the previous hidden state
+3. Produces an output and updates the hidden state
+
+However, basic RNNs struggle with long-term dependencies due to vanishing/exploding gradients. Enter LSTMs and GRUs!
+
+### LSTM (Long Short-Term Memory)
+
+LSTMs are like RNNs with a sophisticated memory management system. They have three gates:
+
+- Forget gate: Decides what to throw away from cell state
+- Input gate: Decides what new information to store
+- Output gate: Decides what parts of the cell state to output
+
+This architecture helps maintain long-term dependencies and manages information flow more effectively.
+
+### GRU (Gated Recurrent Unit)
+
+GRUs are the streamlined cousin of LSTMs. They merge the forget and input gates into a single "update gate" and combine cell state with hidden state. This makes them:
+
+- Computationally more efficient
+- Often just as effective as LSTMs
+- Easier to train due to fewer parameters
+
+Each architecture has its strengths, but they all share the fundamental ability to process sequential data while maintaining context - perfect for text generation!
+
+
 ## Installation
 
 1) Clone the repository:

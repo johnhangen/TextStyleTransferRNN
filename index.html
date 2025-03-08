@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Style Transfer RNN</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --text-color: #333;
+            --code-bg: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #f5f6fa;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .quote {
+            font-style: italic;
+            color: var(--secondary-color);
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 2rem 0;
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+
+        .sample-output {
+            background: #f8f9fa;
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        /* New styles for the interactive section */
+        .interactive-section {
+            background: #fff;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .control-group textarea,
+        .control-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .control-group textarea:focus,
+        .control-group select:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        .temperature-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .temperature-control input[type="range"] {
+            flex: 1;
+        }
+
+        .temperature-control span {
+            min-width: 3rem;
+            text-align: center;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .output-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--code-bg);
+            border-radius: 5px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .output-section pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+    <!-- Add ONNX Runtime Web -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Text Style Transfer RNN</h1>
+        
+        <p class="quote">🎭 "To train, or not to train— that is the question."</p>
+
+        <div class="interactive-section">
+            <h2>Try it yourself!</h2>
+            <div class="control-group">
+                <label for="input-text">Enter your text:</label>
+                <textarea id="input-text" rows="4" placeholder="Enter some text to transform..."></textarea>
+            </div>
+            
+            <div class="control-group">
+                <label for="model-select">Select Model:</label>
+                <select id="model-select">
+                    <option value="shakespeare">Shakespeare</option>
+                    <option value="wikipedia">Wikipedia</option>
+                    <option value="linux">Linux Kernel</option>
+                    <option value="notes">School Notes</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="temperature">Temperature (Creativity):</label>
+                <div class="temperature-control">
+                    <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.8">
+                    <span id="temperature-value">0.5</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="length">Output Length (characters):</label>
+                <input type="number" id="length" min="10" max="1000" value="100" style="width: 100%; padding: 0.75rem; border: 2px solid #e1e1e1; border-radius: 5px; font-size: 1rem;">
+            </div>
+
+            <button id="generate-btn">Generate Text</button>
+
+            <div class="output-section" style="display: none;">
+                <h3>Generated Output:</h3>
+                <pre id="output-text"></pre>
+            </div>
+        </div>
+
+        <h2>How it Works</h2>
+        <p>This project leverages Recurrent Neural Networks (RNNs) and their advanced variants. Let's break down how these architectures function:</p>
+
+        <h3>RNN (Recurrent Neural Network)</h3>
+        <p>Think of RNNs as neural networks with a memory. Unlike regular networks that process data in isolation, RNNs maintain a "hidden state" that carries information from previous inputs. At each step, the network:</p>
+        <ol>
+            <li>Takes in new input</li>
+            <li>Combines it with the previous hidden state</li>
+            <li>Produces an output and updates the hidden state</li>
+        </ol>
+        <p>However, basic RNNs struggle with long-term dependencies due to vanishing/exploding gradients. Enter LSTMs and GRUs!</p>
+
+        <h3>LSTM (Long Short-Term Memory)</h3>
+        <p>LSTMs are like RNNs with a sophisticated memory management system. They have three gates:</p>
+        <ul>
+            <li>Forget gate: Decides what to throw away from cell state</li>
+            <li>Input gate: Decides what new information to store</li>
+            <li>Output gate: Decides what parts of the cell state to output</li>
+        </ul>
+        <p>This architecture helps maintain long-term dependencies and manages information flow more effectively.</p>
+
+        <h3>GRU (Gated Recurrent Unit)</h3>
+        <p>GRUs are the streamlined cousin of LSTMs. They merge the forget and input gates into a single "update gate" and combine cell state with hidden state. This makes them:</p>
+        <ul>
+            <li>Computationally more efficient</li>
+            <li>Often just as effective as LSTMs</li>
+            <li>Easier to train due to fewer parameters</li>
+        </ul>
+        <p>Each architecture has its strengths, but they all share the fundamental ability to process sequential data while maintaining context - perfect for text generation!</p>
+
+        <h2>Installation</h2>
+        <ol>
+            <li>
+                <p>Clone the repository:</p>
+                <pre><code>git clone https://github.com/johnhangen/TextStyleTransferRNN
+cd TextStyleTransferRNN</code></pre>
+            </li>
+            <li>
+                <p>Create and activate a virtual environment (optional but recommended):</p>
+                <pre><code>python -m venv env
+source env/bin/activate  # On Windows, use `env\Scripts\activate`</code></pre>
+            </li>
+            <li>
+                <p>Install dependencies:</p>
+                <pre><code>pip install -r requirements.txt</code></pre>
+            </li>
+            <li>
+                <p>Make sure to download the datasets and place it in the data/ folder.</p>
+            </li>
+        </ol>
+
+        <h2>Usage</h2>
+        <p>To use the model you can run the main.py file. This will train the model on the datasets and then generate text based on the seed you provide:</p>
+        <pre><code>python main.py</code></pre>
+
+        <h2>Data</h2>
+        <p>For this project, I used the tiny Shakespeare dataset, Wikipedia, Linux Kernel, and a sample of my notes from school. For each of these datasets I trained a separate RNN. Below are samples are the results of using one random char as the seed for each of the datasets.</p>
+
+        <h3>Shakespeare</h3>
+        <div class="sample-output">
+            <pre>What is't sinched us you make budget-pear live him.
+
+LARTIUS:
+They from this blood
+Bf our father's mood
+At Grecian swear'd and endure
+Was prick in thing this wetward then rejourn a cuprocenable confouths, if
+Their blove answer'd!
+
+COMINIUS:
+Phostur, is bale
+prie last, where that so stand same make gods.
+Wherein we have but proceed
+Be as mine home,
+And carry things go valiak,
+Than Hector'd.</pre>
+        </div>
+
+        <h3>Wikipedia</h3>
+        <div class="sample-output">
+            <pre>to be stocked or by accessive interests for the prophets, each decades, such as complete resource for all basis, for example, one of the [[WCBS]]; if they found an entire condition of the order, but learning puth of the populationâ€"whof the jurisdiction, considerably as in the Aston Menci.Dasaromatic County includes. And nearby was gained for around merged. This results should not be considered to be more explained in the universe.</pre>
+        </div>
+
+        <h3>Linux Kernel</h3>
+        <div class="sample-output">
+            <pre>VE_REG_INIT;a
+
+        update_spin_unlock(&q->syst));
+        for (rcu_ops->event_chunk_files);
+
+        __read(" use each itsize sohe a CPUs.h>
+#include <linux/post, " by the task the { nr_mutex);</pre>
+        </div>
+    </div>
+    <script>
+        // Get DOM elements
+        const inputText = document.getElementById('input-text');
+        const modelSelect = document.getElementById('model-select');
+        const temperatureSlider = document.getElementById('temperature');
+        const temperatureValue = document.getElementById('temperature-value');
+        const lengthInput = document.getElementById('length');
+        const generateBtn = document.getElementById('generate-btn');
+        const outputSection = document.querySelector('.output-section');
+        const outputText = document.getElementById('output-text');
+
+        // Model and encoding storage
+        let currentModel = null;
+        let currentEncoding = null;
+        const modelCache = new Map();
+        const encodingCache = new Map();
+
+        // Update temperature value display
+        temperatureSlider.addEventListener('input', (e) => {
+            temperatureValue.textContent = e.target.value;
+        });
+
+        // Load character encoding from JSON file
+        async function loadEncoding(modelName) {
+            if (encodingCache.has(modelName)) {
+                return encodingCache.get(modelName);
+            }
+            
+            try {
+                console.log(`Loading encoding for ${modelName}_char_encoding.json`);
+                const response = await fetch(`${modelName}_char_encoding.json`);
+                const encodingData = await response.json();
+                
+                // Create encoding object with char_to_idx and idx_to_char mappings
+                const encoding = {
+                    char_to_idx: encodingData.char_to_idx || {}, 
+                    idx_to_char: {}
+                };
+
+                // Build reverse mapping of idx_to_char
+                for (const [char, idx] of Object.entries(encoding.char_to_idx)) {
+                    encoding.idx_to_char[idx] = char;
+                }
+
+                // Validate encoding structure
+                if (Object.keys(encoding.char_to_idx).length === 0) {
+                    console.error('Invalid encoding format:', encodingData);
+                    throw new Error('Encoding file is missing character to index mapping');
+                }
+
+                // Log encoding stats
+                console.log(`Loaded encoding with ${Object.keys(encoding.char_to_idx).length} characters`);
+                
+                encodingCache.set(modelName, encoding);
+                return encoding;
+            } catch (error) {
+                console.error('Error loading character encoding:', error);
+                throw error;
+            }
+        }
+
+        // Load ONNX model
+        async function loadModel(modelName) {
+            if (modelCache.has(modelName)) {
+                return modelCache.get(modelName);
+            }
+
+            try {
+                const session = await ort.InferenceSession.create(`${modelName}.onnx`);
+                
+                
+                modelCache.set(modelName, session);
+                return session;
+            } catch (error) {
+                console.error('Error loading model:', error);
+                throw error;
+            }
+        }
+
+        // Convert text to tensor
+        function textToTensor(text, encoding) {
+            // Check if encoding is valid
+            if (!encoding || !encoding.char_to_idx) {
+                throw new Error('Invalid character encoding');
+            }
+
+            // Map characters to indices, using space for unknown characters
+            const spaceIndex = encoding.char_to_idx[' '] || 0;
+            const indices = text.split('').map(char => {
+                const index = encoding.char_to_idx[char];
+                if (index === undefined) {
+                    return spaceIndex;
+                }
+                return index;
+            });
+
+            // Create tensor
+            try {
+                return new ort.Tensor('int64', new BigInt64Array(indices.map(n => BigInt(n))), [1, indices.length]);
+            } catch (error) {
+                console.error('Error creating tensor:', error);
+                throw new Error('Failed to create input tensor');
+            }
+        }
+
+        // Get logits from model output
+        function getLogitsFromOutput(output, vocabSize) {
+            // Get the raw output data
+            const outputData = output.data;
+            const outputShape = output.dims;
+                        
+            // For sequence output, we want the last prediction
+            // Shape should be [batch_size, seq_length, vocab_size]
+            // We want the last token's predictions
+            if (outputShape.length === 3) {
+                const batchSize = outputShape[0];
+                const seqLength = outputShape[1];
+                const vocabSize = outputShape[2];
+                
+                // Get the logits for the last token
+                const startIdx = (seqLength - 1) * vocabSize;
+                const endIdx = startIdx + vocabSize;
+                return Array.from(outputData.slice(startIdx, endIdx));
+            }
+            
+            // If output is already [batch_size, vocab_size]
+            if (outputShape.length === 2) {
+                return Array.from(outputData.slice(0, vocabSize));
+            }
+            
+            throw new Error(`Unexpected output shape: ${outputShape}`);
+        }
+
+        // Sample from model output using temperature
+        function sample(logits, temperature, vocabSize) {
+            // Ensure we have the correct number of logits
+            if (logits.length !== vocabSize) {
+                console.error(`Logits length ${logits.length} does not match vocab size ${vocabSize}`);
+                throw new Error('Invalid logits length');
+            }
+            
+            // Apply temperature scaling
+            const scaled = logits.map(l => l / temperature);
+            
+            // Subtract max for numerical stability
+            const maxLogit = Math.max(...scaled);
+            const expScaled = scaled.map(l => Math.exp(l - maxLogit));
+            
+            // Compute softmax
+            const sum = expScaled.reduce((a, b) => a + b, 0);
+            const probs = expScaled.map(e => e / sum);
+            
+            // Sample from distribution
+            const random = Math.random();
+            let cumSum = 0;
+            for (let i = 0; i < probs.length; i++) {
+                cumSum += probs[i];
+                if (random < cumSum) return i;
+            }
+            return 0; // Default to first character if sampling fails
+        }
+
+        // Generate text using the model
+        async function generateText(session, encoding, inputText, temperature, maxLength = 100) {
+            try {
+                // Check model inputs
+                const modelInputs = session.inputNames;
+                
+                // Get vocabulary size
+                const vocabSize = Object.keys(encoding.char_to_idx).length;
+                console.log('Vocabulary size:', vocabSize);
+                
+                // Initialize current text with input
+                let currentText = inputText;
+                console.log('Starting generation with:', currentText);
+                
+                // Initialize hidden state with zeros - try different sizes if 256 doesn't work
+                const NUM_LAYERS = 3;
+                const BATCH_SIZE = 1;
+                const HIDDEN_SIZE = 512;
+                let hiddenState;
+                
+                // Try to determine the correct hidden size
+                try {
+                    // First, check if we even need a hidden state
+                    if (!modelInputs.includes('hidden')) {
+                        console.log('Model does not require hidden state, proceeding with only input');
+                        // Create a simple input tensor and try to run the model
+                        const testInput = textToTensor('test', encoding);
+                        const testOutput = await session.run({
+                            'input': testInput
+                        });
+                        console.log('Model works without hidden state');
+                        
+                        // Start generation loop without hidden state
+                        for (let i = 0; i < maxLength; i++) {
+                            const inputTensor = textToTensor(currentText, encoding);
+                            const outputs = await session.run({ 'input': inputTensor });
+                            
+                            // Get logits for the last prediction
+                            const logits = getLogitsFromOutput(outputs['output'], vocabSize);
+                            
+                            // Sample next character
+                            const nextCharIdx = sample(logits, temperature, vocabSize);
+                            const nextChar = encoding.idx_to_char[nextCharIdx];
+                            
+                            if (!nextChar) {
+                                console.warn(`No character found for index: ${nextCharIdx}`);
+                                continue;
+                            }
+                            
+                            // Add to current text
+                            currentText += nextChar;
+                            
+                            // Check for end of sequence or max length
+                            if (nextChar === '<EOS>' || currentText.length >= maxLength) {
+                                break;
+                            }
+                        }
+                        
+                        return currentText;
+                    }
+                    
+                    // Create hidden state with hardcoded dimensions
+                    try {
+                        hiddenState = new ort.Tensor(
+                            'float32',
+                            new Float32Array(NUM_LAYERS * BATCH_SIZE * HIDDEN_SIZE).fill(0),
+                            [NUM_LAYERS, BATCH_SIZE, HIDDEN_SIZE]  // [num_layers, batch_size, hidden_size]
+                        );
+                        
+                        // Test if this works
+                        const testInput = textToTensor('test', encoding);
+                        await session.run({
+                            'input': testInput,
+                            'hidden': hiddenState
+                        });
+                    } catch (e) {
+                        console.error('Error with hidden state:', e.message);
+                        throw new Error(`Failed to initialize hidden state: ${e.message}`);
+                    }
+                    
+                    // Start generation loop with hidden state
+                    for (let i = 0; i < maxLength; i++) {
+                        const inputTensor = textToTensor(currentText, encoding);
+                        const outputs = await session.run({
+                            'input': inputTensor,
+                            'hidden': hiddenState
+                        });
+                        
+                        // Get logits for the last prediction
+                        const logits = getLogitsFromOutput(outputs['output'], vocabSize);
+                        
+                        // Sample next character
+                        const nextCharIdx = sample(logits, temperature, vocabSize);
+                        const nextChar = encoding.idx_to_char[nextCharIdx];
+                        
+                        if (!nextChar) {
+                            console.warn(`No character found for index: ${nextCharIdx}`);
+                            continue;
+                        }
+                        
+                        // Update hidden state
+                        if (outputs['hidden_out']) {
+                            hiddenState.data.set(outputs['hidden_out'].data);
+                        }
+                        
+                        // Add to current text
+                        currentText += nextChar;
+                        
+                        // Check for end of sequence or max length
+                        if (nextChar === '<EOS>' || currentText.length >= maxLength) {
+                            break;
+                        }
+                    }
+                    
+                    return currentText;
+                    
+                } catch (error) {
+                    console.error('Error in text generation:', error);
+                    throw new Error(`Text generation failed: ${error.message}`);
+                }
+            } catch (error) {
+                console.error('Error in text generation:', error);
+                throw new Error(`Text generation failed: ${error.message}`);
+            }
+        }
+
+        // Handle model selection change
+        modelSelect.addEventListener('change', async () => {
+            const modelName =  `model/${modelSelect.value.charAt(0).toUpperCase() + modelSelect.value.slice(1)}`;
+            try {
+                generateBtn.disabled = true;
+                generateBtn.textContent = 'Loading Model...';
+                
+                // Load model and encoding
+                currentModel = await loadModel(modelName);
+                currentEncoding = await loadEncoding(modelName);
+                
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Text';
+            } catch (error) {
+                alert('Error loading model. Please try again.');
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Text';
+            }
+        });
+
+        // Initial model load
+        modelSelect.dispatchEvent(new Event('change'));
+
+        // Handle generate button click
+        generateBtn.addEventListener('click', async () => {
+            // Validate input
+            if (!inputText.value.trim()) {
+                alert('Please enter some text to transform!');
+                return;
+            }
+
+            if (!currentModel || !currentEncoding) {
+                alert('Please wait for the model to load.');
+                return;
+            }
+
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            outputSection.style.display = 'none';
+
+            try {
+                const text = inputText.value.trim();
+                const temperature = parseFloat(temperatureSlider.value);
+                const maxLength = parseInt(lengthInput.value);
+                
+                // Generate text
+                const generatedText = await generateText(
+                    currentModel,
+                    currentEncoding,
+                    text,
+                    temperature,
+                    maxLength
+                );
+                
+                // Display output
+                outputText.textContent = generatedText;
+                outputSection.style.display = 'block';
+            } catch (error) {
+                console.error('Error generating text:', error);
+                alert('Error generating text. Please try again.');
+            } finally {
+                // Reset button state
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Text';
+            }
+        });
+    </script>
+</body>
+</html> 
